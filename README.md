@@ -288,16 +288,6 @@ Os resultados detalhados estão disponíveis apenas para membros da equipe de pe
 - Dados MERGE (INPE) e FUNCEME possuem políticas próprias de uso
 - **Não é permitida a distribuição ou publicação sem autorização expressa dos orientadores**
 
-## 🤝 Colaboração e Contato
-
-Para questões sobre o projeto, colaborações ou acesso a resultados:
-
-📧 **Contato**: [emails dos orientadores - confidencial]
-
----
-
-<div align="center">
-
 **Desenvolvido como parte de pesquisa em Meteorologia Computacional e Deep Learning**
 
 *Última atualização: Dezembro 2025*
