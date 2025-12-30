@@ -1,231 +1,305 @@
-# Google DeepMind GraphCast and GenCast
+# Modelo Adaptativo de Deep Learning para Redução de Viés em Previsões Meteorológicas
 
-This package contains example code to run and train the weather models used in the research papers [GraphCast](https://www.science.org/doi/10.1126/science.adi2336) and [GenCast](https://arxiv.org/abs/2312.15796).
+<div align="center">
 
-It also provides pretrained model weights, normalization statistics and example input data on [Google Cloud Bucket](https://console.cloud.google.com/storage/browser/dm_graphcast).
+**⚠️ PROJETO DE PESQUISA CONFIDENCIAL ⚠️**
 
-Full model training requires downloading the
-[ERA5](https://www.ecmwf.int/en/forecasts/datasets/reanalysis-datasets/era5)
-dataset, available from [ECMWF](https://www.ecmwf.int/). This can best be
-accessed as Zarr from [Weatherbench2's ERA5 data](https://weatherbench2.readthedocs.io/en/latest/data-guide.html#era5).
+*Este repositório contém código e metodologias de pesquisa em desenvolvimento*
 
-Data for operational fine-tuning can similarly be accessed at [Weatherbench2's HRES 0th frame data](https://weatherbench2.readthedocs.io/en/latest/data-guide.html#ifs-hres-t-0-analysis).
+</div>
 
-These datasets may be governed by separate terms and conditions or license provisions. Your use of such third-party materials is subject to any such terms and you should check that you can comply with any applicable restrictions or terms and conditions before use.
+## 📋 Informações do Projeto
 
-## Overview of files common to models
+**Orientadores:**
+- Prof. Dr. José Laurindo Campos dos Santos
+- Prof. Me. Renato Senna
 
-*   `autoregressive.py`: Wrapper used to run (and train) the one-step predictions
-    to produce a sequence of predictions by auto-regressively feeding the
-    outputs back as inputs at each step, in JAX a differentiable way.
-*   `checkpoint.py`: Utils to serialize and deserialize trees.
-*   `data_utils.py`: Utils for data preprocessing.
-*   `deep_typed_graph_net.py`: General purpose deep graph neural network (GNN)
-    that operates on `TypedGraph`'s where both inputs and outputs are flat
-    vectors of features for each of the nodes and edges.
-*   `grid_mesh_connectivity.py`: Tools for converting between regular grids on a
-    sphere and triangular meshes.
-*   `icosahedral_mesh.py`: Definition of an icosahedral multi-mesh.
-*   `losses.py`: Loss computations, including latitude-weighting.
-*   `mlp.py`: Utils for building MLPs with norm conditioning layers.
-*   `model_utils.py`: Utilities to produce flat node and edge vector features
-    from input grid data, and to manipulate the node output vectors back
-    into a multilevel grid data.
-*   `normalization.py`: Wrapper used to normalize inputs according to historical
-    values, and targets according to historical time differences.
-*   `predictor_base.py`: Defines the interface of the predictor, which models
-    and all of the wrappers implement.
-*   `rollout.py`: Similar to `autoregressive.py` but used only at inference time
-    using a python loop to produce longer, but non-differentiable trajectories.
-*   `typed_graph.py`: Definition of `TypedGraph`'s.
-*   `typed_graph_net.py`: Implementation of simple graph neural network
-    building blocks defined over `TypedGraph`'s that can be combined to build
-    deeper models.
-*   `xarray_jax.py`: A wrapper to let JAX work with `xarray`s.
-*   `xarray_tree.py`: An implementation of tree.map_structure that works with
-    `xarray`s.
+**Instituição:** INPA - Instituto Nacional de Pesquisas da Amazônia
 
-## GenCast: Diffusion-based ensemble forecasting for medium-range weather
+**Período:** 2024-2026
 
-This package provides four pretrained models:
+**Área de Pesquisa:** Meteorologia Computacional, Deep Learning, Previsão Numérica de Tempo
 
-1.  `GenCast 0p25deg <2019`, GenCast model at 0.25deg resolution with 13
-pressure levels and a 6 times refined icosahedral mesh. This model is trained on
-ERA5 data from 1979 to 2018 (inclusive), and can be causally evaluated on 2019
-and later years. This model was described in the paper
-`GenCast: Diffusion-based ensemble forecasting for medium-range weather`
-(https://arxiv.org/abs/2312.15796)
+## 🎯 Objetivo
 
-2.  `GenCast 0p25deg Operational <2022`, GenCast model at 0.25deg resolution, with 13 pressure levels and a 6
-times refined icosahedral mesh. This model is trained on ERA5 data from
-1979 to 2018, and fine-tuned on HRES-fc0 data from
-2016 to 2021 and can be causally evaluated on 2022 and later years.
-This model can make predictions in an operational setting (i.e., initialised
-from HRES-fc0)
+Este projeto de pesquisa visa desenvolver e aplicar modelos adaptativos baseados em Deep Learning (GraphCast/GenCast) para reduzir vieses sistemáticos em previsões meteorológicas de médio prazo, utilizando como base dados operacionais brasileiros:
 
-3.  `GenCast 1p0deg <2019`, GenCast model at 1deg resolution, with 13 pressure
-levels and a 5 times refined icosahedral mesh. This model is
-trained on ERA5 data from 1979 to 2018, and can be causally evaluated on 2019 and later years.
-This model has a smaller memory footprint than the 0.25deg models
+- **MERGE** (Merged Precipitation Data - INPE/CPTEC)
+- **FUNCEME** (Fundação Cearense de Meteorologia e Recursos Hídricos)
 
-4. `GenCast 1p0deg Mini <2019`, GenCast model at 1deg resolution, with 13 pressure levels and a
-4 times refined icosahedral mesh. This model is trained on ERA5 data
-from 1979 to 2018, and can be causally evaluated on 2019 and later years.
-This model has the smallest memory footprint of those provided and has been
-provided to enable low cost demonstrations (for example, it is runnable in a free Colab notebook).
-While its performance is reasonable, it is not representative of the performance
-of the GenCast models (1-3) above. For reference, a scorecard comparing its performance to ENS can be found in [docs/](https://github.com/google-deepmind/graphcast/blob/main/docs/GenCast_1p0deg_Mini_ENS_scorecard.png). Note that in this scorecard,
-GenCast Mini only uses 8 member ensembles (vs. ENS' 50) so we use the fair (unbiased)
-CRPS to allow for fair comparison.
+A abordagem combina técnicas de transfer learning com dados globais (ERA5) e adaptação regional para o território brasileiro, com foco especial na região Nordeste.
 
-The best starting point is to open `gencast_mini_demo.ipynb` in [Colaboratory](https://colab.research.google.com/github/deepmind/graphcast/blob/master/gencast_mini_demo.ipynb), which gives an
-example of loading data, generating random weights or loading a `GenCast 1p0deg Mini <2019`
-snapshot, generating predictions, computing the loss and computing gradients.
-The one-step implementation of GenCast architecture is provided in
-`gencast.py` and the relevant data, weights and statistics are in the `gencast/`
-subdir of the Google Cloud Bucket.
+## 🔬 Fundamentação Científica
 
-### Instructions for running GenCast on Google Cloud compute
+### Dados MERGE (INPE)
+O MERGE é um produto de precipitação que combina estimativas de satélite (TRMM/GPM) com dados de pluviômetros em superfície, gerando campos de precipitação em grade com resolução espacial de 0.1° para a América do Sul. Este projeto utiliza séries históricas do MERGE para:
+- Validação de previsões de precipitação
+- Treinamento de camadas de ajuste fino
+- Quantificação de vieses regionais
 
-[cloud_vm_setup.md](https://github.com/google-deepmind/graphcast/blob/main/docs/cloud_vm_setup.md)
-contains detailed instructions on launching a Google Cloud TPU VM. This provides
-a means of running models (1-3) in the separate `gencast_demo_cloud_vm.ipynb` through [Colaboratory](https://colab.research.google.com/github/deepmind/graphcast/blob/master/gencast_demo_cloud_vm.ipynb).
+### Dados FUNCEME
+A FUNCEME mantém uma rede densa de estações meteorológicas no Nordeste brasileiro, fornecendo dados observacionais de alta qualidade que são utilizados para:
+- Benchmark de previsões regionais
+- Identificação de padrões climáticos locais
+- Calibração de modelos para fenômenos específicos (ZCIT, VCAN, etc.)
 
-The document also provides [instructions](https://github.com/google-deepmind/graphcast/blob/main/docs/cloud_vm_setup.md#running-inference-on-gpu) for running GenCast on a GPU. This requires using a different attention implementation.
+## 🧠 Metodologia
 
-### Brief description of relevant library files
+### 1. Arquitetura Base: GraphCast/GenCast
+Utilizamos a arquitetura GraphCast (DeepMind, 2023) como modelo base, que emprega Graph Neural Networks (GNNs) para previsões meteorológicas em escala global.
 
-*   `denoiser.py`: The GenCast denoiser for one step predictions.
-*   `denoisers_base.py`: Defines the interface of the denoiser.
-*   `dpm_solver_plus_plus_2s.py`: Sampler using DPM-Solver++ 2S from [1].
-*   `gencast.py`: Combines the GenCast model architecture, wrapped as a
-    denoiser, with a sampler to generate predictions.
-*   `nan_cleaning.py`: Wraps a predictor to allow it to work with data
-    cleaned of NaNs. Used to remove NaNs from sea surface temperature.
-*   `samplers_base.py`: Defines the interface of the sampler.
-*   `samplers_utils.py`: Utility methods for the sampler.
-*   `sparse_transformer.py`: General purpose sparse transformer that
-    operates on `TypedGraph`'s where both inputs and outputs are flat vectors of
-    features for each of the nodes and edges. `predictor.py` uses one of these
-    for the mesh GNN.
-*   `sparse_transformer_utils.py`: Utility methods for the sparse
-    transformer.
-*   `transformer.py`: Wraps the mesh transformer, swapping the leading
-    two axes of the nodes in the input graph.
-
-[1] DPM-Solver++: Fast Solver for Guided Sampling of Diffusion Probabilistic
-  Models, https://arxiv.org/abs/2211.01095
-
-## GraphCast: Learning skillful medium-range global weather forecasting
-
-This package provides three pretrained models:
-
-1.  `GraphCast`, the high-resolution model used in the GraphCast paper (0.25 degree
-resolution, 37 pressure levels), trained on ERA5 data from 1979 to 2017,
-
-2.  `GraphCast_small`, a smaller, low-resolution version of GraphCast (1 degree
-resolution, 13 pressure levels, and a smaller mesh), trained on ERA5 data from
-1979 to 2015, useful to run a model with lower memory and compute constraints,
-
-3.  `GraphCast_operational`, a high-resolution model (0.25 degree resolution, 13
-pressure levels) pre-trained on ERA5 data from 1979 to 2017 and fine-tuned on
-HRES data from 2016 to 2021. This model can be initialized from HRES data (does
-not require precipitation inputs).
-
-The best starting point is to open `graphcast_demo.ipynb` in [Colaboratory](https://colab.research.google.com/github/deepmind/graphcast/blob/master/graphcast_demo.ipynb), which gives an
-example of loading data, generating random weights or load a pre-trained
-snapshot, generating predictions, computing the loss and computing gradients.
-The one-step implementation of GraphCast architecture, is provided in
-`graphcast.py` and the relevant data, weights and statistics are in the `graphcast/`
-subdir of the Google Cloud Bucket.
-
-WARNING: For backwards compatibility, we have also left GraphCast data in the top level of the bucket. These will eventually be deleted in favour of the `graphcast/` subdir.
-
-### Brief description of relevant library files:
-
-*   `casting.py`: Wrapper used around GraphCast to make it work using
-    BFloat16 precision.
-*   `graphcast.py`: The main GraphCast model architecture for one-step of
-    predictions.
-*   `solar_radiation.py`: Computes Top-Of-the-Atmosphere (TOA) incident solar
-    radiation compatible with ERA5. This is used as a forcing variable and thus
-    needs to be computed for target lead times in an operational setting.
-
-## Dependencies.
-
-[Chex](https://github.com/deepmind/chex),
-[Dask](https://github.com/dask/dask),
-[Dinosaur](https://github.com/google-research/dinosaur),
-[Haiku](https://github.com/deepmind/dm-haiku),
-[JAX](https://github.com/google/jax),
-[JAXline](https://github.com/deepmind/jaxline),
-[Jraph](https://github.com/deepmind/jraph),
-[Numpy](https://numpy.org/),
-[Pandas](https://pandas.pydata.org/),
-[Python](https://www.python.org/),
-[SciPy](https://scipy.org/),
-[Tree](https://github.com/deepmind/tree),
-[Trimesh](https://github.com/mikedh/trimesh),
-[XArray](https://github.com/pydata/xarray) and
-[XArray-TensorStore](https://github.com/google/xarray-tensorstore).
-
-
-## License and Disclaimers
-
-The Colab notebooks and the associated code are licensed under the Apache License, Version 2.0. You may obtain a copy of the License at: https://www.apache.org/licenses/LICENSE-2.0.
-
-The model weights are made available for use under the terms of the Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International (CC BY-NC-SA 4.0). You may obtain a copy of the License at: https://creativecommons.org/licenses/by-nc-sa/4.0/.
-
-This is not an officially supported Google product.
-
-Unless required by applicable law or agreed to in writing, all software and materials distributed here under the Apache 2.0 or CC-BY-NC-SA 4.0 licenses are distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the licenses for the specific language governing permissions and limitations under those licenses.
-
-GenCast and GraphCast are part of an experimental research project. You are solely responsible for determining the appropriateness of using or distributing GenCast, GraphCast or any outputs generated and assume all risks associated with your use or distribution of GenCast, GraphCast and outputs and your exercise of rights and permissions granted by Google to you under the relevant License. Use discretion before relying on, publishing, downloading or otherwise using GenCast, GraphCast or any outputs generated. GenCast, GraphCast or any outputs generated (i) are not based on data published by; (ii) have not been produced in collaboration with; and (iii) have not been endorsed by any government meteorological agency or department and in no way replaces official alerts, warnings or notices published by such agencies.
-
-Copyright 2024 DeepMind Technologies Limited.
-
-
-## Citations
-
-If you use this work, consider citing our papers ([blog post](https://deepmind.google/discover/blog/graphcast-ai-model-for-faster-and-more-accurate-global-weather-forecasting/), [Science](https://www.science.org/doi/10.1126/science.adi2336), [arXiv](https://arxiv.org/abs/2212.12794), [arxiv GenCast](https://arxiv.org/abs/2312.15796)):
-
-```latex
-@article{lam2023learning,
-  title={Learning skillful medium-range global weather forecasting},
-  author={Lam, Remi and Sanchez-Gonzalez, Alvaro and Willson, Matthew and Wirnsberger, Peter and Fortunato, Meire and Alet, Ferran and Ravuri, Suman and Ewalds, Timo and Eaton-Rosen, Zach and Hu, Weihua and others},
-  journal={Science},
-  volume={382},
-  number={6677},
-  pages={1416--1421},
-  year={2023},
-  publisher={American Association for the Advancement of Science}
-}
+### 2. Estratégia de Adaptação
+```
+[Modelo Pré-treinado ERA5] 
+         ↓
+[Transfer Learning]
+         ↓
+[Fine-tuning com MERGE + FUNCEME]
+         ↓
+[Camadas de Correção de Viés]
+         ↓
+[Modelo Adaptado Regional]
 ```
 
+### 3. Redução de Viés
+Implementação de técnicas específicas:
+- **Bias Correction Layers**: Camadas neurais treinadas para corrigir vieses sistemáticos
+- **Ensemble Weighting**: Ponderação adaptativa baseada em performance histórica
+- **Regional Feature Extraction**: Extração de características climáticas regionais
+- **Temporal Consistency Constraints**: Restrições para manter consistência física
 
-```latex
-@article{price2023gencast,
-  title={GenCast: Diffusion-based ensemble forecasting for medium-range weather},
-  author={Price, Ilan and Sanchez-Gonzalez, Alvaro and Alet, Ferran and Andersson, Tom R and El-Kadi, Andrew and Masters, Dominic and Ewalds, Timo and Stott, Jacklynn and Mohamed, Shakir and Battaglia, Peter and Lam, Remi and Willson, Matthew},
-  journal={arXiv preprint arXiv:2312.15796},
-  year={2023}
-}
+## 📊 Datasets
+
+### Dados Principais
+| Dataset | Fonte | Resolução | Período | Uso |
+|---------|-------|-----------|---------|-----|
+| **ERA5** | ECMWF | 0.25° × 0.25° | 1979-presente | Pré-treinamento |
+| **MERGE** | INPE/CPTEC | 0.1° × 0.1° | 2000-presente | Fine-tuning e validação |
+| **FUNCEME** | FUNCEME | Estações pontuais | 1990-presente | Validação regional |
+| **HRES** | ECMWF | 0.1° × 0.1° | 2016-presente | Benchmark operacional |
+
+### Variáveis Meteorológicas
+- **Superfície**: Temperatura (2m), Pressão ao nível do mar, Umidade específica, Vento (u/v 10m), Precipitação
+- **Níveis de Pressão**: Geopotencial, Temperatura, Umidade específica, Vento (u/v) em 13 níveis (1000-50 hPa)
+- **Forçantes**: Radiação solar, Topografia, Máscara terra-oceano, Temperatura da superfície do mar
+
+## 🗂️ Estrutura do Repositório
+
+```
+graphcast-experiments/
+├── graphcast/                    # Módulos principais do modelo
+│   ├── autoregressive.py        # Predições autoregressivas
+│   ├── graphcast.py             # Implementação do GraphCast
+│   ├── gencast.py               # Implementação do GenCast (ensemble)
+│   ├── data_utils.py            # Utilidades para processamento de dados
+│   ├── normalization.py         # Normalização de dados
+│   ├── losses.py                # Funções de perda customizadas
+│   └── ...                      # Outros módulos de suporte
+├── notebooks/                    # Notebooks de experimentação
+│   ├── graphcast_demo.ipynb     # Demo básico do GraphCast
+│   ├── gencast_mini_demo.ipynb  # Demo do GenCast
+│   └── gencast_demo_cloud_vm.ipynb
+├── docs/                        # Documentação do projeto
+│   └── cloud_vm_setup.md        # Setup de VM na nuvem
+├── setup.py                     # Configuração de instalação
+└── README.md                    # Este arquivo
 ```
 
-## Acknowledgements
+### Principais Módulos
 
-The (i) GenCast and GraphCast communicate with and/or reference with the following separate libraries and packages and the colab notebooks include a few examples of ECMWF’s ERA5 and HRES data that can be used as input to the models.
-Data and products of the European Centre for Medium-range Weather Forecasts (ECMWF), as modified by Google.
-Modified Copernicus Climate Change Service information 2023. Neither the European Commission nor ECMWF is responsible for any use that may be made of the Copernicus information or data it contains.
-ECMWF HRES datasets
-Copyright statement: Copyright "© 2023 European Centre for Medium-Range Weather Forecasts (ECMWF)".
-Source: www.ecmwf.int
-License Statement: ECMWF open data is published under a Creative Commons Attribution 4.0 International (CC BY 4.0). https://creativecommons.org/licenses/by/4.0/
-Disclaimer: ECMWF does not accept any liability whatsoever for any error or omission in the data, their availability, or for any loss or damage arising from their use.
+#### Módulos Core
+- [autoregressive.py](graphcast/autoregressive.py): Wrapper para produzir sequências de previsões autoregressivas
+- [graphcast.py](graphcast/graphcast.py): Implementação do modelo GraphCast
+- [gencast.py](graphcast/gencast.py): Modelo GenCast com previsões ensemble baseadas em difusão
+- [data_utils.py](graphcast/data_utils.py): Processamento e preparação de dados meteorológicos
 
-Use of the third-party materials referred to above may be governed by separate terms and conditions or license provisions. Your use of the third-party materials is subject to any such terms and you should check that you can comply with any applicable restrictions or terms and conditions before use.
+#### Graph Neural Networks
+- [deep_typed_graph_net.py](graphcast/deep_typed_graph_net.py): GNN de propósito geral para grafos tipados
+- [typed_graph_net.py](graphcast/typed_graph_net.py): Blocos construtivos para GNNs
+- [grid_mesh_connectivity.py](graphcast/grid_mesh_connectivity.py): Conversão entre grades regulares e malhas triangulares
+- [icosahedral_mesh.py](graphcast/icosahedral_mesh.py): Definição de malha icosaédrica multi-resolução
 
+#### Utilidades
+- [normalization.py](graphcast/normalization.py): Normalização baseada em estatísticas históricas
+- [losses.py](graphcast/losses.py): Funções de perda com ponderação por latitude
+- [xarray_jax.py](graphcast/xarray_jax.py): Interface entre JAX e xarray
+- [checkpoint.py](graphcast/checkpoint.py): Serialização e carregamento de modelos
 
-## Contact
+#### Denoisers e Samplers (GenCast)
+- [denoiser.py](graphcast/denoiser.py): Implementação do denoiser para difusão
+- [dpm_solver_plus_plus_2s.py](graphcast/dpm_solver_plus_plus_2s.py): Solver DPM++ para amostragem eficiente
+- [samplers_base.py](graphcast/samplers_base.py): Interface base para samplers
 
-For feedback and questions, contact us at gencast@google.com.
+## 🚀 Instalação e Configuração
+
+### Pré-requisitos
+```bash
+# Python 3.8+
+# CUDA 11.0+ (para treinamento em GPU)
+# TPU (opcional, para experimentos em larga escala)
+```
+
+### Instalação
+```bash
+# Clone o repositório
+git clone [REPOSITÓRIO_CONFIDENCIAL]
+cd graphcast-experiments
+
+# Instale as dependências
+pip install -e .
+
+# Dependências adicionais
+pip install xarray zarr netCDF4 cartopy
+```
+
+### Configuração de Dados
+⚠️ **ATENÇÃO**: Os dados MERGE e FUNCEME são de acesso restrito. Entre em contato com os orientadores para credenciais.
+
+```python
+# Estrutura esperada de diretórios
+data/
+├── era5/          # Dados ERA5 (Zarr)
+├── merge/         # Dados MERGE (NetCDF)
+├── funceme/       # Dados FUNCEME (CSV/NetCDF)
+└── checkpoints/   # Modelos salvos
+```
+
+## 🔬 Experimentos e Notebooks
+
+### 1. GraphCast Demo
+[graphcast_demo.ipynb](graphcast_demo.ipynb) - Demonstração básica do GraphCast com:
+- Carregamento de dados ERA5
+- Execução de previsões determinísticas
+- Visualização de resultados
+- Métricas de performance
+
+### 2. GenCast Mini Demo
+[gencast_mini_demo.ipynb](gencast_mini_demo.ipynb) - Experimentos com GenCast:
+- Previsões ensemble probabilísticas
+- Quantificação de incerteza
+- Comparação com métodos determinísticos
+
+### 3. Adaptação Regional
+**🔒 Código em desenvolvimento** - Experimentos de fine-tuning com dados brasileiros
+
+## 📈 Métricas de Avaliação
+
+### Métricas Determinísticas
+- **RMSE** (Root Mean Square Error): Erro quadrático médio ponderado por latitude
+- **ACC** (Anomaly Correlation Coefficient): Correlação de anomalias
+- **Bias**: Viés médio por região e variável
+
+### Métricas Probabilísticas (Ensemble)
+- **CRPS** (Continuous Ranked Probability Score)
+- **Spread-Skill Relationship**: Relação entre dispersão do ensemble e erro
+- **Reliability Diagrams**: Calibração probabilística
+
+### Métricas Regionais Customizadas
+- **Skill Score Nordeste**: Performance específica para região Nordeste
+- **Precipitation Detection**: POD, FAR, CSI para eventos de precipitação
+- **Extreme Events**: Verificação de eventos extremos (>50mm/dia)
+
+## 🔧 Workflow de Desenvolvimento
+
+### 1. Pré-treinamento (Completo)
+```bash
+# Utiliza checkpoint pré-treinado do DeepMind
+# ERA5 global (1979-2018)
+```
+
+### 2. Fine-tuning Regional (Em Desenvolvimento)
+```python
+# Código simplificado do pipeline
+from graphcast import graphcast, data_utils, losses
+import xarray as xr
+
+# Carregar modelo pré-treinado
+model = graphcast.load_pretrained('graphcast_operational')
+
+# Preparar dados brasileiros
+merge_data = load_merge_data(year_range=(2019, 2023))
+funceme_data = load_funceme_stations()
+
+# Fine-tuning
+optimizer = optax.adam(learning_rate=1e-5)
+for batch in training_data:
+    loss = losses.weighted_mse_loss(
+        predictions=model(batch['inputs']),
+        targets=batch['targets'],
+        weights=get_regional_weights()  # Maior peso para região Nordeste
+    )
+    # Atualizar parâmetros...
+```
+
+### 3. Avaliação
+```python
+# Comparação com baseline
+evaluate_model(
+    model=adapted_model,
+    test_data=merge_validation_set,
+    baseline_models=['ECMWF-IFS', 'GFS', 'CPTEC-BAM'],
+    metrics=['rmse', 'acc', 'bias', 'precipitation_skill']
+)
+```
+
+## 📊 Resultados Preliminares
+
+**🔒 CONFIDENCIAL - Não divulgar**
+
+Os resultados detalhados estão disponíveis apenas para membros da equipe de pesquisa. Contate os orientadores para acesso.
+
+### Principais Descobertas (Resumo)
+- ✅ Redução de viés de precipitação em X% para região Nordeste
+- ✅ Melhoria em Y% no ACC para previsões de 5 dias
+- ✅ Melhor representação de sistemas convectivos organizados
+- 🔄 Trabalho em andamento: Quantificação de incerteza calibrada
+
+## 📚 Referências
+
+### Artigos Principais
+1. **GraphCast**: Lam, R., et al. (2023). "GraphCast: Learning skillful medium-range global weather forecasting." *Science*, 382(6677), 1416-1421.
+
+2. **GenCast**: Price, I., et al. (2023). "GenCast: Diffusion-based ensemble forecasting for medium-range weather." *arXiv preprint arXiv:2312.15796*.
+
+### Dados
+3. **ERA5**: Hersbach, H., et al. (2020). "The ERA5 global reanalysis." *Quarterly Journal of the Royal Meteorological Society*, 146(730), 1999-2049.
+
+4. **MERGE**: Rozante, J.R., et al. (2010). "Combining TRMM and Surface Observations of Precipitation: Technique and Validation over South America." *Weather and Forecasting*, 25(3), 885-894.
+
+### Clima Regional
+5. Estudo sobre climatologia da precipitação no Nordeste brasileiro
+6. Sistemas meteorológicos atuantes na América do Sul
+
+## 👥 Equipe
+
+**Orientação Acadêmica:**
+- Prof. Dr. José Laurindo Campos dos Santos
+- Prof. Me. Renato Senna
+
+**Desenvolvimento:**
+- Isabela Andrade Aguiar (INPA)
+
+## 📝 Licença e Uso
+
+⚠️ **Este é um projeto de pesquisa acadêmica confidencial.**
+
+- O código é derivado do GraphCast (DeepMind) sob licença Apache 2.0
+- Desenvolvimentos e adaptações regionais são propriedade do INPA
+- Dados MERGE (INPE) e FUNCEME possuem políticas próprias de uso
+- **Não é permitida a distribuição ou publicação sem autorização expressa dos orientadores**
+
+## 🤝 Colaboração e Contato
+
+Para questões sobre o projeto, colaborações ou acesso a resultados:
+
+📧 **Contato**: [emails dos orientadores - confidencial]
+
+---
+
+<div align="center">
+
+**Desenvolvido como parte de pesquisa em Meteorologia Computacional e Deep Learning**
+
+*Última atualização: Dezembro 2025*
+
+</div>
